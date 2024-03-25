@@ -149,9 +149,9 @@ impl Matrix {
     }
 
     fn print(&self) {
-        for row in &self.tablero {
-            for &value in row {
-                print!("{} ", value);
+        for fila in &self.tablero {
+            for &valor in fila {
+                print!("{} ", valor);
             }
             println!();
         }
@@ -159,11 +159,13 @@ impl Matrix {
 }
 
 fn main() {
+    //generar 100 matrices y guardar en pob
     let mut pob = Vec::new();
     for _ in 0..100 {
         pob.push(Matrix::new());
     }
 
+    //imprimir aptitud de cada matriz
     for tab in pob {
         println!("{:?}", tab.aptitud());
     }
