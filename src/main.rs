@@ -1,5 +1,6 @@
 use plotters::prelude::*;
 use rand::Rng;
+use std::time::Instant;
 
 #[derive(Copy, Clone)]
 pub struct Matrix {
@@ -63,17 +64,11 @@ impl Matrix {
         let mut nr_y = 0;
 
         //buscar reina en fila
-        let mut tiene_reina = false;
         for i in 0..8 {
             if self.get(nr_x, i) == 1 {
                 nr_y = i;
-                tiene_reina = true;
                 break;
             }
-        }
-
-        if !tiene_reina {
-            self.set(nr_x, rand::thread_rng().gen_range(0..8), 1)
         }
 
         if nr_y == 7 {
@@ -208,7 +203,7 @@ impl Matrix {
         apt
     }
 
-    fn print(&self) {
+    fn _print(&self) {
         for fila in &self.tablero {
             for &valor in fila {
                 print!("{} ", valor);
@@ -218,7 +213,7 @@ impl Matrix {
     }
 }
 
-fn main() {
+fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
     //generar 100 matrices y guardar en pob
     let mut poblacion = Vec::new();
     let mut posiciones_pob = Vec::new();
@@ -241,12 +236,26 @@ fn main() {
         //obtener 5 aleatorios de la poblacion
         let mut posiciones_padres: Vec<usize> = Vec::new();
         let mut aptitudes_padres: Vec<i32> = Vec::new();
+        let mut padres = Vec::new();
         for _ in 0..5 {
             let random = rand::thread_rng().gen_range(0..100);
             let tablero = &poblacion[random];
+            padres.push(poblacion[random]);
             aptitudes_padres.push(tablero.aptitud());
             posiciones_padres.push(random);
         }
+
+        // sin permutacion, utilizando vec std
+        // padres.sort_by(|a, b| a.aptitud().cmp(&b.aptitud()));
+        // let mut _descendiente_s = Matrix::new_empty();
+        // _descendiente_s = padres[1];
+        // for i in 4..8 {
+        //     for j in 0..8 {
+        //         let val = padres[0].get(i, j);
+        //         let _ = _descendiente_s.set(i, j, val);
+        //     }
+        // }
+
 
         //permutacion de aptitudes hacia las posiciones para tener el mismo orden
         let permutation = permutation::sort(&aptitudes_padres);
@@ -262,6 +271,7 @@ fn main() {
             }
         }
 
+        
         //reemplazar diez peores con el mismo o mutar
         let permutation_apts = permutation::sort(&aptitudes);
         let mut temp_posiciones_pob = permutation_apts.apply_slice(&posiciones_pob);
@@ -284,13 +294,14 @@ fn main() {
             aptitudes.push(x);
         }
 
+        //encontrar mejor aptitud de la iteracion
         let mejor_aptitud = aptitudes.iter().min();
         match mejor_aptitud {
             Some(&mejor) => {
                 hist_aptitudes.push(mejor);
-                println!("#{}: {}", counter, mejor);
+                //println!("#{}: {}", counter, mejor);
                 if mejor == 0 {
-                    println!("Solucion encontrada!");
+                    print!("[{}] solucion encontrada: it#{}", num_ejecucion, counter);
                     hist_aptitudes.push(mejor);
                     es_solucion = true;
                 }
@@ -301,21 +312,29 @@ fn main() {
         counter = counter + 1;
     }
 
-    for tablero in &poblacion {
-        let x = tablero.aptitud();
-        if x == 0 {
-            tablero.print();
-            println!("{}", x);
-        }
-    }
+    //encontrar e imprimir tablero con la solucion
+    // for tablero in &poblacion {
+    //     let x = tablero.aptitud();
+    //     if x == 0 {
+    //         tablero.print();
+    //         println!("{}", x);
+    //     }
+    // }
 
+    generar_grafico_aptitud(hist_aptitudes, counter, num_ejecucion);
+
+    (es_solucion, counter-1)
+}
+
+fn generar_grafico_aptitud(hist_aptitudes: Vec<i32>, counter: i32, num_ejecucion: i32) {
     let max_valor = hist_aptitudes.iter().max();
     let mut peor = 0;
     match max_valor {
         Some(&max) => peor = max,
         None => (),
     }
-    let root_area = BitMapBackend::new("images/pl.png", (600, 400)).into_drawing_area();
+    let path_name = &format!("images/graf\'{num_ejecucion}\'.png");
+    let root_area = BitMapBackend::new(path_name, (600, 400)).into_drawing_area();
     root_area.fill(&WHITE).unwrap();
 
     let mut ctx = ChartBuilder::on(&root_area)
@@ -335,4 +354,54 @@ fn main() {
         .border_style(&RED),
     )
     .unwrap();
+}
+
+fn main() {
+    let start_time_gen = Instant::now();
+    let mut _ejecuciones_exitosas = 0;
+    let mut evals_ejecuciones = Vec::new();
+
+    for num_ejecucion in 0..30 {
+        let start_time_sin = Instant::now();
+
+        let resultado = buscar_solucion_reinas(num_ejecucion);
+
+        if resultado.0 {
+            print!(" en: {}s", start_time_sin.elapsed().as_secs_f64());
+            _ejecuciones_exitosas = _ejecuciones_exitosas + 1;
+        } else {
+            println!("[{}] No se pudo encontrar una solucion: {}s", num_ejecucion, start_time_sin.elapsed().as_secs_f64())
+        }
+        evals_ejecuciones.push(resultado.1);
+        println!();
+    }
+
+    println!("Tiempo total: {}s", start_time_gen.elapsed().as_secs_f64());
+    println!("Ejecuciones exitosas: {}", _ejecuciones_exitosas);
+    let mut mejor_ejecucion = 0;
+    let mut peor_ejecucion = 0;
+    match evals_ejecuciones.iter().min() {
+        Some(&min) => mejor_ejecucion = min,
+        None => (),
+    }
+    match evals_ejecuciones.iter().max() {
+        Some(&max) => peor_ejecucion = max,
+        None => (),
+    }
+
+    let mut avg = 0;
+    for i in &evals_ejecuciones {
+        avg = avg + i;
+    }
+    avg = avg / (evals_ejecuciones.len() as i32);
+
+    let mut _mediana = 0;
+    evals_ejecuciones.sort();
+    let mid = evals_ejecuciones.len() / 2;
+    _mediana = evals_ejecuciones[mid];
+
+    println!("Evaluaciones de la mejor ejecucion: {}", mejor_ejecucion);
+    println!("Evaluaciones de la peor ejecucion: {}", peor_ejecucion);
+    println!("Media de evaluaciones: {}", avg);
+    println!("Mediana de evaluaciones: {}", _mediana);
 }
