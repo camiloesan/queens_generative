@@ -389,6 +389,8 @@ fn main() {
         None => (),
     }
 
+    evals_ejecuciones.retain(|&x| x != 999);
+
     let mut avg = 0;
     for i in &evals_ejecuciones {
         avg = avg + i;
