@@ -9,7 +9,7 @@ pub struct Matrix {
 
 impl Matrix {
     // generar nuevo tablero con valores aleatorios
-    fn new() -> Self { 
+    fn new() -> Self {
         let mut tab = Matrix {
             tablero: [[0; 8]; 8],
         };
@@ -47,13 +47,13 @@ impl Matrix {
     }
 
     // set nuevo valor en la posicion deseada
-    fn set(&mut self, fila: usize, columna: usize, value: i32) { 
+    fn set(&mut self, fila: usize, columna: usize, value: i32) {
         self.tablero[fila][columna] = value;
     }
 
-    // calcular aptitud en base a colisiones de las reinas horizontal, 
+    // calcular aptitud en base a colisiones de las reinas horizontal,
     // vertical y diagonalmente
-    fn aptitud(&self) -> i32 { 
+    fn aptitud(&self) -> i32 {
         let mut apt = 0;
         for i in 0..8 {
             for j in 0..8 {
@@ -68,7 +68,7 @@ impl Matrix {
     }
 
     // mutar una posicion la reina
-    fn mutar(&mut self) -> [[i32; 8]; 8] { 
+    fn mutar(&mut self) -> [[i32; 8]; 8] {
         let nr_x = rand::thread_rng().gen_range(0..8);
         let mut nr_y = 0;
 
@@ -89,7 +89,7 @@ impl Matrix {
         }
 
         // si esta en el extremo izquierdo mover + 1
-        if nr_y == 0 { 
+        if nr_y == 0 {
             self.set(nr_x, nr_y, 0);
             self.set(nr_x, nr_y + 1, 1);
             return self.tablero;
@@ -226,7 +226,7 @@ impl Matrix {
 }
 
 fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
-    //generar 100 matrices y guardar en pob
+    //generar 100 matrices y guardar en poblacion
     let mut poblacion = Vec::new();
     let mut posiciones_pob = Vec::new();
     for i in 0..100 {
@@ -246,7 +246,7 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
         }
 
         //obtener 5 aleatorios de la poblacion
-        let mut posiciones_padres: Vec<usize> = Vec::new();
+        let mut pos_padres: Vec<usize> = Vec::new();
         let mut aptitudes_padres: Vec<i32> = Vec::new();
         let mut padres = Vec::new();
         for _ in 0..5 {
@@ -254,7 +254,7 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
             let tablero = &poblacion[random];
             padres.push(poblacion[random]);
             aptitudes_padres.push(tablero.aptitud());
-            posiciones_padres.push(random);
+            pos_padres.push(random);
         }
 
         // sin permutacion, utilizando vec std
@@ -268,25 +268,25 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
         //     }
         // }
 
-
-        // permutacion de aptitudes hacia las posiciones para tener el mismo orden 
+        // permutacion de aptitudes hacia las posiciones para tener el mismo orden
         // en ambas despues del sort
         let permutation = permutation::sort(&aptitudes_padres);
-        posiciones_padres = permutation.apply_slice(&posiciones_padres);
+        pos_padres = permutation.apply_slice(&pos_padres);
 
         // cruzar (combinar dos padres)
         let mut _descendiente = Matrix::new_empty();
-        _descendiente = poblacion[posiciones_padres[posiciones_padres.len() - 2]];
+        _descendiente = poblacion[pos_padres[pos_padres.len() - 2]];
         for i in 4..8 {
             for j in 0..8 {
-                let valor = poblacion[posiciones_padres[posiciones_padres.len() - 1]].get(i, j);
+                let valor = poblacion[pos_padres[pos_padres.len() - 1]].get(i, j);
                 let _ = _descendiente.set(i, j, valor);
             }
         }
-        
-        // permutar posiciones de la poblacion en base al orden de aptitudes
+
+        // permutar posiciones de la poblacion en base al orden de aptitudes de menor a mayor
         let permutation_apts = permutation::sort(&aptitudes);
         let mut temp_posiciones_pob = permutation_apts.apply_slice(&posiciones_pob);
+        // invertir para obtener las peores primero
         temp_posiciones_pob.reverse();
 
         // reemplazar diez peores con descendientes o mutar (80%)
@@ -336,7 +336,7 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
     generar_grafico_aptitud(hist_aptitudes, counter, num_ejecucion);
 
     //regresar si es solución y el número en el que se encontró la solución
-    (es_solucion, counter-1)
+    (es_solucion, counter - 1)
 }
 
 fn generar_grafico_aptitud(hist_aptitudes: Vec<i32>, counter: i32, num_ejecucion: i32) {
@@ -385,7 +385,11 @@ fn main() {
             print!(" en: {}s", start_time_sin.elapsed().as_secs_f64());
             _ejecuciones_exitosas = _ejecuciones_exitosas + 1;
         } else {
-            println!("[{}] No se pudo encontrar una solucion: {}s", num_ejecucion, start_time_sin.elapsed().as_secs_f64())
+            println!(
+                "[{}] No se pudo encontrar una solucion: {}s",
+                num_ejecucion,
+                start_time_sin.elapsed().as_secs_f64()
+            )
         }
         evals_ejecuciones.push(resultado.1);
         println!();
@@ -394,6 +398,7 @@ fn main() {
     println!("Tiempo total: {}s", start_time_gen.elapsed().as_secs_f64());
     println!("Ejecuciones exitosas: {}", _ejecuciones_exitosas);
 
+    
     //determinar mejor o peor ejecución según el min y max de las ejecuciones
     let mut mejor_ejecucion = 0;
     let mut peor_ejecucion = 0;
