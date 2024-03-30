@@ -8,7 +8,8 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    fn new() -> Self {
+    // generar nuevo tablero con valores aleatorios
+    fn new() -> Self { 
         let mut tab = Matrix {
             tablero: [[0; 8]; 8],
         };
@@ -21,6 +22,7 @@ impl Matrix {
         tab
     }
 
+    // generar nuevo tablero vacio
     fn new_empty() -> Self {
         let tab = Matrix {
             tablero: [[0; 8]; 8],
@@ -29,23 +31,29 @@ impl Matrix {
         tab
     }
 
+    // obtener tablero actual
     fn get_tablero(&self) -> [[i32; 8]; 8] {
         self.tablero
     }
 
+    // reemplazar tablero actual por uno nuevo
     fn reemplazar(&mut self, new_tablero: [[i32; 8]; 8]) {
         self.tablero = new_tablero;
     }
 
+    // obtener el valor de la posicion en fila, columna
     fn get(&self, fila: usize, columna: usize) -> i32 {
         self.tablero[fila][columna]
     }
 
-    fn set(&mut self, fila: usize, columna: usize, value: i32) {
+    // set nuevo valor en la posicion deseada
+    fn set(&mut self, fila: usize, columna: usize, value: i32) { 
         self.tablero[fila][columna] = value;
     }
 
-    fn aptitud(&self) -> i32 {
+    // calcular aptitud en base a colisiones de las reinas horizontal, 
+    // vertical y diagonalmente
+    fn aptitud(&self) -> i32 { 
         let mut apt = 0;
         for i in 0..8 {
             for j in 0..8 {
@@ -59,7 +67,8 @@ impl Matrix {
         apt
     }
 
-    fn mutar(&mut self) -> [[i32; 8]; 8] {
+    // mutar una posicion la reina
+    fn mutar(&mut self) -> [[i32; 8]; 8] { 
         let nr_x = rand::thread_rng().gen_range(0..8);
         let mut nr_y = 0;
 
@@ -71,6 +80,7 @@ impl Matrix {
             }
         }
 
+        // si esta en el extremo derecho mover - 1
         if nr_y == 7 {
             self.set(nr_x, nr_y, 0);
             self.set(nr_x, nr_y - 1, 1);
@@ -78,12 +88,14 @@ impl Matrix {
             return self.tablero;
         }
 
-        if nr_y == 0 {
+        // si esta en el extremo izquierdo mover + 1
+        if nr_y == 0 { 
             self.set(nr_x, nr_y, 0);
             self.set(nr_x, nr_y + 1, 1);
             return self.tablero;
         }
 
+        // si esta en el medio decidir aleatoriamente si mover izq o der
         if rand::thread_rng().gen_bool(0.50) {
             self.set(nr_x, nr_y, 0);
             self.set(nr_x, nr_y + 1, 1);
@@ -257,11 +269,12 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
         // }
 
 
-        //permutacion de aptitudes hacia las posiciones para tener el mismo orden
+        // permutacion de aptitudes hacia las posiciones para tener el mismo orden 
+        // en ambas despues del sort
         let permutation = permutation::sort(&aptitudes_padres);
         posiciones_padres = permutation.apply_slice(&posiciones_padres);
 
-        //cruzar (combinar dos padres)
+        // cruzar (combinar dos padres)
         let mut _descendiente = Matrix::new_empty();
         _descendiente = poblacion[posiciones_padres[posiciones_padres.len() - 2]];
         for i in 4..8 {
@@ -270,16 +283,15 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
                 let _ = _descendiente.set(i, j, valor);
             }
         }
-
         
-        //reemplazar diez peores con el mismo o mutar
+        // permutar posiciones de la poblacion en base al orden de aptitudes
         let permutation_apts = permutation::sort(&aptitudes);
         let mut temp_posiciones_pob = permutation_apts.apply_slice(&posiciones_pob);
         temp_posiciones_pob.reverse();
 
-        //reemplazo con descendientes
+        // reemplazar diez peores con descendientes o mutar (80%)
         for i in 0..10 {
-            let mutacion = rand::thread_rng().gen_bool(0.8); //mutacion del 80%
+            let mutacion = rand::thread_rng().gen_bool(0.8); //mutación del 80%
             if mutacion {
                 poblacion[temp_posiciones_pob[i]].reemplazar(_descendiente.mutar());
             } else {
@@ -287,14 +299,14 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
             }
         }
 
-        //recalcular aptitudes
+        // recalcular aptitudes despues de la cruza y mutación
         aptitudes.clear();
         for tablero in &poblacion {
             let x = tablero.aptitud();
             aptitudes.push(x);
         }
 
-        //encontrar mejor aptitud de la iteracion
+        // encontrar mejor aptitud de la iteración y guardarlo en el historial de aptitudes
         let mejor_aptitud = aptitudes.iter().min();
         match mejor_aptitud {
             Some(&mejor) => {
@@ -323,6 +335,7 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
 
     generar_grafico_aptitud(hist_aptitudes, counter, num_ejecucion);
 
+    //regresar si es solución y el número en el que se encontró la solución
     (es_solucion, counter-1)
 }
 
@@ -361,11 +374,12 @@ fn main() {
     let mut _ejecuciones_exitosas = 0;
     let mut evals_ejecuciones = Vec::new();
 
+    //repetir 30 veces para generar información
     for num_ejecucion in 0..30 {
         let start_time_sin = Instant::now();
-
         let resultado = buscar_solucion_reinas(num_ejecucion);
 
+        // si es solucion
         if resultado.0 {
             print!(" en: {}s", start_time_sin.elapsed().as_secs_f64());
             _ejecuciones_exitosas = _ejecuciones_exitosas + 1;
@@ -378,6 +392,8 @@ fn main() {
 
     println!("Tiempo total: {}s", start_time_gen.elapsed().as_secs_f64());
     println!("Ejecuciones exitosas: {}", _ejecuciones_exitosas);
+
+    //determinar mejor o peor ejecución según el min y max de las ejecuciones
     let mut mejor_ejecucion = 0;
     let mut peor_ejecucion = 0;
     match evals_ejecuciones.iter().min() {
@@ -389,8 +405,10 @@ fn main() {
         None => (),
     }
 
+    //descartar ejecuciones fallidas
     evals_ejecuciones.retain(|&x| x != 999);
 
+    // calculo medidas de tendencia central
     let mut avg = 0;
     for i in &evals_ejecuciones {
         avg = avg + i;
