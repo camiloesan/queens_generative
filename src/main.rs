@@ -350,10 +350,11 @@ fn generar_grafico_aptitud(hist_aptitudes: Vec<i32>, counter: i32, num_ejecucion
     let root_area = BitMapBackend::new(path_name, (600, 400)).into_drawing_area();
     root_area.fill(&WHITE).unwrap();
 
+    let title_name = &format!("Convergencia #\'{num_ejecucion}\'.png");
     let mut ctx = ChartBuilder::on(&root_area)
         .set_label_area_size(LabelAreaPosition::Left, 40)
         .set_label_area_size(LabelAreaPosition::Bottom, 40)
-        .caption("Convergencia", ("sans-serif", 40))
+        .caption(title_name, ("sans-serif", 40))
         .build_cartesian_2d(0..(counter + 100), 0..peor)
         .unwrap();
     ctx.configure_mesh().draw().unwrap();
@@ -410,6 +411,8 @@ fn main() {
         Some(&max) => peor_ejecucion = max,
         None => (),
     }
+    let index_mejor = evals_ejecuciones.iter().position(|&r| r == mejor_ejecucion).unwrap();
+    let index_peor = evals_ejecuciones.iter().position(|&r| r == peor_ejecucion).unwrap();
 
     //descartar ejecuciones fallidas
     evals_ejecuciones.retain(|&x| x != 999);
@@ -428,8 +431,8 @@ fn main() {
     let varianza = evals_ejecuciones.iter().map(|x| (*x as f64 - avg as f64).powi(2)).sum::<f64>() / (evals_ejecuciones.len() - 1) as f64;
     let desviacion_estandar = varianza.sqrt();
 
-    println!("Evaluaciones de la mejor ejecucion: {}", mejor_ejecucion);
-    println!("Evaluaciones de la peor ejecucion: {}", peor_ejecucion);
+    println!("Evaluaciones de la mejor ejecucion: [{}] {}", index_mejor, mejor_ejecucion);
+    println!("Evaluaciones de la peor ejecucion: [{}] {}", index_peor, peor_ejecucion);
     println!("Media de evaluaciones: {}", avg);
     println!("Mediana de evaluaciones: {}", _mediana);
     println!("Desviación estandar: {}", desviacion_estandar)
