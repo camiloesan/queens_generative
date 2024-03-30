@@ -369,6 +369,7 @@ fn generar_grafico_aptitud(hist_aptitudes: Vec<i32>, counter: i32, num_ejecucion
     .unwrap();
 }
 
+
 fn main() {
     let start_time_gen = Instant::now();
     let mut _ejecuciones_exitosas = 0;
@@ -419,9 +420,12 @@ fn main() {
     evals_ejecuciones.sort();
     let mid = evals_ejecuciones.len() / 2;
     _mediana = evals_ejecuciones[mid];
+    let varianza = evals_ejecuciones.iter().map(|x| (*x as f64 - avg as f64).powi(2)).sum::<f64>() / (evals_ejecuciones.len() - 1) as f64;
+    let desviacion_estandar = varianza.sqrt();
 
     println!("Evaluaciones de la mejor ejecucion: {}", mejor_ejecucion);
     println!("Evaluaciones de la peor ejecucion: {}", peor_ejecucion);
     println!("Media de evaluaciones: {}", avg);
     println!("Mediana de evaluaciones: {}", _mediana);
+    println!("Desviación estandar: {}", desviacion_estandar)
 }
