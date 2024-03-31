@@ -313,22 +313,13 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
         counter = counter + 1;
     }
 
-    //encontrar e imprimir tablero con la solucion
-    // for tablero in &poblacion {
-    //     let x = tablero.aptitud();
-    //     if x == 0 {
-    //         tablero.print();
-    //         println!("{}", x);
-    //     }
-    // }
-
-    generar_grafico_aptitud(hist_aptitudes, counter, num_ejecucion);
+    //generar_grafico_aptitud(hist_aptitudes, counter, num_ejecucion);
 
     //regresar si es solución y el número en el que se encontró la solución
     (es_solucion, counter - 1)
 }
 
-fn generar_grafico_aptitud(hist_aptitudes: Vec<i32>, counter: i32, num_ejecucion: i32) {
+fn _generar_grafico_aptitud(hist_aptitudes: Vec<i32>, counter: i32, num_ejecucion: i32) {
     let max_valor = hist_aptitudes.iter().max();
     let mut peor = 0;
     match max_valor {
@@ -364,6 +355,7 @@ fn main() {
     let start_time_gen = Instant::now();
     let mut _ejecuciones_exitosas = Arc::new(Mutex::new(0)); //mutex
     let evals_ejecuciones = Arc::new(Mutex::new(Vec::new())); // mutex
+    let mut handles = Vec::new();
 
     //repetir 30 veces para generar información
     for num_ejecucion in 0..30 {
@@ -371,7 +363,7 @@ fn main() {
 
         let ejec_arc_mut = Arc::clone(&_ejecuciones_exitosas);
         let evals_arc_mut = Arc::clone(&evals_ejecuciones);
-        let mut handles = Vec::new();
+
         let handle = thread::spawn(move || {
 
             let resultado = buscar_solucion_reinas(num_ejecucion);
@@ -390,15 +382,13 @@ fn main() {
             ex.push(resultado.1);
             // evals_ejecuciones.push(resultado.1);
             println!();
-
-
         });
+
         handles.push(handle);
+    }
 
-        for x in handles {
-            x.join().unwrap();
-        }
-
+    for x in handles {
+        x.join().unwrap();
     }
 
     println!("Tiempo total: {}s", start_time_gen.elapsed().as_secs_f64());
