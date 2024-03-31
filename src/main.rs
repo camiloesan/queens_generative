@@ -1,6 +1,8 @@
 use plotters::prelude::*;
 use rand::Rng;
 use std::time::Instant;
+use std::sync::{Mutex, Arc};
+use std::thread;
 
 #[derive(Copy, Clone)]
 pub struct Matrix {
@@ -239,40 +241,21 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
     let mut hist_aptitudes = Vec::new();
     let mut counter = 0;
     while !es_solucion && counter < 10000 {
-        //calcular aptitud de cada matriz
-        let mut aptitudes = Vec::new();
-        for tablero in &poblacion {
-            aptitudes.push(tablero.aptitud());
-        }
-
         //obtener 5 aleatorios de la poblacion
         let mut pos_padres: Vec<usize> = Vec::new();
         let mut aptitudes_padres: Vec<i32> = Vec::new();
-        let mut padres = Vec::new();
         for _ in 0..5 {
             let random = rand::thread_rng().gen_range(0..100);
             let tablero = &poblacion[random];
-            padres.push(poblacion[random]);
             aptitudes_padres.push(tablero.aptitud());
             pos_padres.push(random);
         }
-
-        // sin permutacion, utilizando vec std
-        // padres.sort_by(|a, b| a.aptitud().cmp(&b.aptitud()));
-        // let mut _descendiente_s = Matrix::new_empty();
-        // _descendiente_s = padres[1];
-        // for i in 4..8 {
-        //     for j in 0..8 {
-        //         let val = padres[0].get(i, j);
-        //         let _ = _descendiente_s.set(i, j, val);
-        //     }
-        // }
-
+        
         // permutacion de aptitudes hacia las posiciones para tener el mismo orden
         // en ambas despues del sort
         let permutation = permutation::sort(&aptitudes_padres);
         pos_padres = permutation.apply_slice(&pos_padres);
-
+        
         // cruzar (combinar dos padres)
         let mut _descendiente = Matrix::new_empty();
         _descendiente = poblacion[pos_padres[pos_padres.len() - 2]];
@@ -283,6 +266,12 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
             }
         }
 
+        // calcular aptitud de cada matriz
+        let mut aptitudes = Vec::new();
+        for tablero in &poblacion {
+            aptitudes.push(tablero.aptitud());
+        }
+        
         // permutar posiciones de la poblacion en base al orden de aptitudes de menor a mayor
         let permutation_apts = permutation::sort(&aptitudes);
         let mut temp_posiciones_pob = permutation_apts.apply_slice(&posiciones_pob);
@@ -373,62 +362,80 @@ fn generar_grafico_aptitud(hist_aptitudes: Vec<i32>, counter: i32, num_ejecucion
 
 fn main() {
     let start_time_gen = Instant::now();
-    let mut _ejecuciones_exitosas = 0;
-    let mut evals_ejecuciones = Vec::new();
+    let mut _ejecuciones_exitosas = Arc::new(Mutex::new(0)); //mutex
+    let evals_ejecuciones = Arc::new(Mutex::new(Vec::new())); // mutex
 
     //repetir 30 veces para generar información
     for num_ejecucion in 0..30 {
         let start_time_sin = Instant::now();
-        let resultado = buscar_solucion_reinas(num_ejecucion);
 
-        // si es solucion
-        if resultado.0 {
-            print!(" en: {}s", start_time_sin.elapsed().as_secs_f64());
-            _ejecuciones_exitosas = _ejecuciones_exitosas + 1;
-        } else {
-            println!(
-                "[{}] No se pudo encontrar una solucion: {}s",
-                num_ejecucion,
-                start_time_sin.elapsed().as_secs_f64()
-            )
+        let ejec_arc_mut = Arc::clone(&_ejecuciones_exitosas);
+        let evals_arc_mut = Arc::clone(&evals_ejecuciones);
+        let mut handles = Vec::new();
+        let handle = thread::spawn(move || {
+
+            let resultado = buscar_solucion_reinas(num_ejecucion);
+            if resultado.0 {
+                print!(" en: {}s", start_time_sin.elapsed().as_secs_f64());
+                let mut value = ejec_arc_mut.lock().unwrap();
+                *value += 1;
+            } else {
+                println!(
+                    "[{}] No se pudo encontrar una solucion: {}s",
+                    num_ejecucion,
+                    start_time_sin.elapsed().as_secs_f64()
+                )
+            }
+            let mut ex = evals_arc_mut.lock().unwrap();
+            ex.push(resultado.1);
+            // evals_ejecuciones.push(resultado.1);
+            println!();
+
+
+        });
+        handles.push(handle);
+
+        for x in handles {
+            x.join().unwrap();
         }
-        evals_ejecuciones.push(resultado.1);
-        println!();
+
     }
 
     println!("Tiempo total: {}s", start_time_gen.elapsed().as_secs_f64());
-    println!("Ejecuciones exitosas: {}", _ejecuciones_exitosas);
+    println!("Ejecuciones exitosas: {}", *_ejecuciones_exitosas.lock().unwrap());
 
     
     //determinar mejor o peor ejecución según el min y max de las ejecuciones
     let mut mejor_ejecucion = 0;
     let mut peor_ejecucion = 0;
-    match evals_ejecuciones.iter().min() {
+    let mut x = evals_ejecuciones.lock().unwrap();
+    match x.iter().min() {
         Some(&min) => mejor_ejecucion = min,
         None => (),
     }
-    match evals_ejecuciones.iter().max() {
+    // let mut y = *evals_ejecuciones.lock().unwrap();
+    match x.iter().max() {
         Some(&max) => peor_ejecucion = max,
         None => (),
     }
-    let index_mejor = evals_ejecuciones.iter().position(|&r| r == mejor_ejecucion).unwrap();
-    let index_peor = evals_ejecuciones.iter().position(|&r| r == peor_ejecucion).unwrap();
+    let index_mejor = x.iter().position(|&r| r == mejor_ejecucion).unwrap();
+    let index_peor = x.iter().position(|&r| r == peor_ejecucion).unwrap();
 
     //descartar ejecuciones fallidas
-    evals_ejecuciones.retain(|&x| x != 999);
+    x.retain(|&x| x != 999);
 
     // calculo medidas de tendencia central
     let mut avg = 0;
-    for i in &evals_ejecuciones {
+    for i in x.iter() {
         avg = avg + i;
     }
-    avg = avg / (evals_ejecuciones.len() as i32);
+    avg = avg / (x.len() as i32);
 
     let mut _mediana = 0;
-    evals_ejecuciones.sort();
-    let mid = evals_ejecuciones.len() / 2;
-    _mediana = evals_ejecuciones[mid];
-    let varianza = evals_ejecuciones.iter().map(|x| (*x as f64 - avg as f64).powi(2)).sum::<f64>() / (evals_ejecuciones.len() - 1) as f64;
+    x.sort();
+    let mid = x.len() / 2;
+    _mediana = x[mid];
+    let varianza = x.iter().map(|x| (*x as f64 - avg as f64).powi(2)).sum::<f64>() / (x.len() - 1) as f64;
     let desviacion_estandar = varianza.sqrt();
 
     println!("Evaluaciones de la mejor ejecucion: [{}] {}", index_mejor, mejor_ejecucion);
