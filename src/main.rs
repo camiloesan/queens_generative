@@ -113,56 +113,48 @@ impl Matrix {
         //noreste
         let mut cont_fila = fila;
         let mut cont_col = columna;
-        if fila != 0 || columna != 7 {
-            while cont_fila != 0 && cont_col != 7 {
-                cont_fila = cont_fila - 1;
-                cont_col = cont_col + 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 0 && cont_col != 7 {
+            cont_fila = cont_fila - 1;
+            cont_col = cont_col + 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt = apt + 1;
+                break;
             }
         }
 
         //noroeste
         cont_fila = fila;
         cont_col = columna;
-        if fila != 0 || columna != 0 {
-            while cont_fila != 0 && cont_col != 0 {
-                cont_fila = cont_fila - 1;
-                cont_col = cont_col - 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 0 && cont_col != 0 {
+            cont_fila = cont_fila - 1;
+            cont_col = cont_col - 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt = apt + 1;
+                break;
             }
         }
 
         //suroeste
         cont_fila = fila;
         cont_col = columna;
-        if fila != 7 || columna != 0 {
-            while cont_fila != 7 && cont_col != 0 {
-                cont_fila = cont_fila + 1;
-                cont_col = cont_col - 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 7 && cont_col != 0 {
+            cont_fila = cont_fila + 1;
+            cont_col = cont_col - 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt = apt + 1;
+                break;
             }
         }
 
         //sureste
         cont_fila = fila;
         cont_col = columna;
-        if fila != 7 || columna != 7 {
-            while cont_fila != 7 && cont_col != 7 {
-                cont_fila = cont_fila + 1;
-                cont_col = cont_col + 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 7 && cont_col != 7 {
+            cont_fila = cont_fila + 1;
+            cont_col = cont_col + 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt = apt + 1;
+                break;
             }
         }
 
