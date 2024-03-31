@@ -10,7 +10,6 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    // generar nuevo tablero con valores aleatorios
     fn new() -> Self {
         let mut tab = Matrix {
             tablero: [[0; 8]; 8],
@@ -24,7 +23,6 @@ impl Matrix {
         tab
     }
 
-    // generar nuevo tablero vacio
     fn new_empty() -> Self {
         let tab = Matrix {
             tablero: [[0; 8]; 8],
@@ -33,28 +31,22 @@ impl Matrix {
         tab
     }
 
-    // obtener tablero actual
     fn get_tablero(&self) -> [[i32; 8]; 8] {
         self.tablero
     }
 
-    // reemplazar tablero actual por uno nuevo
     fn reemplazar(&mut self, new_tablero: [[i32; 8]; 8]) {
         self.tablero = new_tablero;
     }
 
-    // obtener el valor de la posicion en fila, columna
     fn get(&self, fila: usize, columna: usize) -> i32 {
         self.tablero[fila][columna]
     }
 
-    // set nuevo valor en la posicion deseada
     fn set(&mut self, fila: usize, columna: usize, value: i32) {
         self.tablero[fila][columna] = value;
     }
 
-    // calcular aptitud en base a colisiones de las reinas horizontal,
-    // vertical y diagonalmente
     fn aptitud(&self) -> i32 {
         let mut apt = 0;
         for i in 0..8 {
@@ -69,7 +61,6 @@ impl Matrix {
         apt
     }
 
-    // mutar una posicion la reina
     fn mutar(&mut self) -> [[i32; 8]; 8] {
         let nr_x = rand::thread_rng().gen_range(0..8);
         let mut nr_y = 0;
@@ -115,56 +106,48 @@ impl Matrix {
         //noreste
         let mut cont_fila = fila;
         let mut cont_col = columna;
-        if fila != 0 || columna != 7 {
-            while cont_fila != 0 && cont_col != 7 {
-                cont_fila = cont_fila - 1;
-                cont_col = cont_col + 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 0 && cont_col != 7 {
+            cont_fila -= 1;
+            cont_col += 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt += 1;
+                break;
             }
         }
 
         //noroeste
         cont_fila = fila;
         cont_col = columna;
-        if fila != 0 || columna != 0 {
-            while cont_fila != 0 && cont_col != 0 {
-                cont_fila = cont_fila - 1;
-                cont_col = cont_col - 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 0 && cont_col != 0 {
+            cont_fila -= 1;
+            cont_col -= 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt += 1;
+                break;
             }
         }
 
         //suroeste
         cont_fila = fila;
         cont_col = columna;
-        if fila != 7 || columna != 0 {
-            while cont_fila != 7 && cont_col != 0 {
-                cont_fila = cont_fila + 1;
-                cont_col = cont_col - 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 7 && cont_col != 0 {
+            cont_fila += 1;
+            cont_col -= 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt += 1;
+                break;
             }
         }
 
         //sureste
         cont_fila = fila;
         cont_col = columna;
-        if fila != 7 || columna != 7 {
-            while cont_fila != 7 && cont_col != 7 {
-                cont_fila = cont_fila + 1;
-                cont_col = cont_col + 1;
-                if self.get(cont_fila, cont_col) == 1 {
-                    apt = apt + 1;
-                    break;
-                }
+        while cont_fila != 7 && cont_col != 7 {
+            cont_fila += 1;
+            cont_col += 1;
+            if self.get(cont_fila, cont_col) == 1 {
+                apt += 1;
+                break;
             }
         }
 
@@ -228,7 +211,6 @@ impl Matrix {
 }
 
 fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
-    //generar 100 matrices y guardar en poblacion
     let mut poblacion = Vec::new();
     let mut posiciones_pob = Vec::new();
     for i in 0..100 {
@@ -236,12 +218,10 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
         poblacion.push(Matrix::new());
     }
 
-    //iterar 10000 veces o hasta encontrar la solucion
     let mut es_solucion = false;
     let mut hist_aptitudes = Vec::new();
     let mut counter = 0;
     while !es_solucion && counter < 10000 {
-        //obtener 5 aleatorios de la poblacion
         let mut pos_padres: Vec<usize> = Vec::new();
         let mut aptitudes_padres: Vec<i32> = Vec::new();
         for _ in 0..5 {
@@ -251,12 +231,9 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
             pos_padres.push(random);
         }
         
-        // permutacion de aptitudes hacia las posiciones para tener el mismo orden
-        // en ambas despues del sort
         let permutation = permutation::sort(&aptitudes_padres);
         pos_padres = permutation.apply_slice(&pos_padres);
         
-        // cruzar (combinar dos padres)
         let mut _descendiente = Matrix::new_empty();
         _descendiente = poblacion[pos_padres[pos_padres.len() - 2]];
         for i in 4..8 {
@@ -266,21 +243,17 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
             }
         }
 
-        // calcular aptitud de cada matriz
         let mut aptitudes = Vec::new();
         for tablero in &poblacion {
             aptitudes.push(tablero.aptitud());
         }
         
-        // permutar posiciones de la poblacion en base al orden de aptitudes de menor a mayor
         let permutation_apts = permutation::sort(&aptitudes);
         let mut temp_posiciones_pob = permutation_apts.apply_slice(&posiciones_pob);
-        // invertir para obtener las peores primero
         temp_posiciones_pob.reverse();
 
-        // reemplazar diez peores con descendientes o mutar (80%)
         for i in 0..10 {
-            let mutacion = rand::thread_rng().gen_bool(0.8); //mutación del 80%
+            let mutacion = rand::thread_rng().gen_bool(0.8);
             if mutacion {
                 poblacion[temp_posiciones_pob[i]].reemplazar(_descendiente.mutar());
             } else {
@@ -288,19 +261,16 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
             }
         }
 
-        // recalcular aptitudes despues de la cruza y mutación
         aptitudes.clear();
         for tablero in &poblacion {
             let x = tablero.aptitud();
             aptitudes.push(x);
         }
 
-        // encontrar mejor aptitud de la iteración y guardarlo en el historial de aptitudes
         let mejor_aptitud = aptitudes.iter().min();
         match mejor_aptitud {
             Some(&mejor) => {
                 hist_aptitudes.push(mejor);
-                //println!("#{}: {}", counter, mejor);
                 if mejor == 0 {
                     print!("[{}] solucion encontrada: it#{}", num_ejecucion, counter);
                     hist_aptitudes.push(mejor);
@@ -313,9 +283,6 @@ fn buscar_solucion_reinas(num_ejecucion: i32) -> (bool, i32) {
         counter = counter + 1;
     }
 
-    //generar_grafico_aptitud(hist_aptitudes, counter, num_ejecucion);
-
-    //regresar si es solución y el número en el que se encontró la solución
     (es_solucion, counter - 1)
 }
 
@@ -357,7 +324,6 @@ fn main() {
     let evals_ejecuciones = Arc::new(Mutex::new(Vec::new())); // mutex
     let mut handles = Vec::new();
 
-    //repetir 30 veces para generar información
     for num_ejecucion in 0..30 {
         let start_time_sin = Instant::now();
 
